@@ -165,7 +165,7 @@ try:
                 return c
         return None
 
-    def filtrar_se_existe(df_, df_full, label, nome_coluna, chave, depende_de=False):
+    def filtrar_se_existe(df_, df_full, label, nome_coluna, chave, depende_de=False, default=None):
         """
         Aplica um filtro multiselect se a coluna existe no DataFrame.
         Retorna (df_filtrado, valores_selecionados).
@@ -178,6 +178,7 @@ try:
             df_[col_real].dropna().unique().tolist(),
             chave=chave,
             depende_de=depende_de,
+            default=default,
         )
         if valores:
             df_ = df_[df_[col_real].astype(str).isin(valores)]
@@ -279,70 +280,59 @@ try:
 
 
     # ============================================================
-    # FILTROS NA SIDEBAR (hierárquicos)
+    # FILTROS NA SIDEBAR (hierárquicos) — um expander por seção
     # ============================================================
-    titulo_secao("FILTROS")
+    st.sidebar.markdown(
+        "<div class='filtro-secao-titulo' style='margin-top:0;'>FILTROS</div>",
+        unsafe_allow_html=True,
+    )
 
     # === TEMPO ===
-    titulo_secao("Tempo")
-
-    df_f, safra_sel = filtrar_se_existe(df_view, df_view, "Safra", "Safra", "safra")
-
-    df_f, ano_sel = filtrar_se_existe(df_f, df_view, "Ano Operacional", "Ano Operacional", "ano_op", depende_de=bool(safra_sel))
-
-    df_f, mes_sel = filtrar_se_existe(df_f, df_view, "Mês de Competência", "Mês de Competência", "mes_comp", depende_de=bool(ano_sel))
+    with st.sidebar.expander("Tempo", expanded=False):
+        df_f, safra_sel = filtrar_se_existe(df_view, df_view, "Safra", "Safra", "safra")
+        df_f, ano_sel = filtrar_se_existe(df_f, df_view, "Ano Operacional", "Ano Operacional", "ano_op", depende_de=bool(safra_sel))
+        df_f, mes_sel = filtrar_se_existe(df_f, df_view, "Mês de Competência", "Mês de Competência", "mes_comp", depende_de=bool(ano_sel))
 
 
     # === TERRITÓRIO ===
-    titulo_secao("Território (Filial)")
-
-    df_f, distrito_sel = filtrar_se_existe(df_f, df_view, "RLE Distrito Filial", "RLE Distrito Filial", "distrito")
-
-    df_f, territorio_sel = filtrar_se_existe(df_f, df_view, "RLE Território Filial", "RLE Território Filial", "territorio", depende_de=bool(distrito_sel))
-
-    df_f, uf_sel = filtrar_se_existe(df_f, df_view, "Estado da Filial", "Estado da Filial", "uf_filial", depende_de=bool(territorio_sel))
-
-    df_f, filial_sel = filtrar_se_existe(df_f, df_view, "Razão Social Filial", "Razão Social Filial", "filial", depende_de=bool(uf_sel))
-
-    df_f, cooperante_sel = filtrar_se_existe(df_f, df_view, "Nome do Cooperante", "Nome do Cooperante", "cooperante", depende_de=bool(filial_sel))
+    with st.sidebar.expander("Território (Filial)", expanded=False):
+        df_f, distrito_sel = filtrar_se_existe(df_f, df_view, "RLE Distrito Filial", "RLE Distrito Filial", "distrito")
+        df_f, territorio_sel = filtrar_se_existe(df_f, df_view, "RLE Território Filial", "RLE Território Filial", "territorio", depende_de=bool(distrito_sel))
+        df_f, uf_sel = filtrar_se_existe(df_f, df_view, "Estado da Filial", "Estado da Filial", "uf_filial", depende_de=bool(territorio_sel))
+        df_f, filial_sel = filtrar_se_existe(df_f, df_view, "Razão Social Filial", "Razão Social Filial", "filial", depende_de=bool(uf_sel))
+        df_f, cooperante_sel = filtrar_se_existe(df_f, df_view, "Nome do Cooperante", "Nome do Cooperante", "cooperante", depende_de=bool(filial_sel))
 
 
     # === PLANTIO ===
-    titulo_secao("Plantio")
-
-    df_f, uf_plantio_sel = filtrar_se_existe(df_f, df_view, "UF de Plantio", "UF de Plantio", "uf_plantio")
-
-    df_f, cidade_plantio_sel = filtrar_se_existe(df_f, df_view, "Cidade de Plantio", "Cidade de Plantio", "cidade_plantio", depende_de=bool(uf_plantio_sel))
+    with st.sidebar.expander("Plantio", expanded=False):
+        df_f, uf_plantio_sel = filtrar_se_existe(df_f, df_view, "UF de Plantio", "UF de Plantio", "uf_plantio")
+        df_f, cidade_plantio_sel = filtrar_se_existe(df_f, df_view, "Cidade de Plantio", "Cidade de Plantio", "cidade_plantio", depende_de=bool(uf_plantio_sel))
 
 
     # === TIPO DE ÁREA ===
-    titulo_secao("Tipo de Área")
-
-    tipo_area_sel = filtro_multiselect(
-        "É Cooperante?",
-        ["Sim", "Não", "—"],
-        chave="tipo_area",
-    )
-    if tipo_area_sel and "É Cooperante?" in df_f.columns:
-        df_f = df_f[df_f["É Cooperante?"].isin(tipo_area_sel)]
+    with st.sidebar.expander("Tipo de Área", expanded=False):
+        tipo_area_sel = filtro_multiselect(
+            "É Cooperante?",
+            ["Sim", "Não", "—"],
+            chave="tipo_area",
+            default=["Sim"],
+        )
+        if tipo_area_sel and "É Cooperante?" in df_f.columns:
+            df_f = df_f[df_f["É Cooperante?"].isin(tipo_area_sel)]
 
 
     # === PRODUTO ===
-    titulo_secao("Produto")
-
-    df_f, tecnologia_sel = filtrar_se_existe(df_f, df_view, "Tecnologia", "Tecnologia", "tecnologia")
-
-    df_f, produto_sel = filtrar_se_existe(df_f, df_view, "Produto", "Produto", "produto", depende_de=bool(tecnologia_sel))
-
-    df_f, categoria_sel = filtrar_se_existe(df_f, df_view, "Categoria", "Categoria", "categoria", depende_de=bool(produto_sel))
+    with st.sidebar.expander("Produto", expanded=False):
+        df_f, tecnologia_sel = filtrar_se_existe(df_f, df_view, "Tecnologia", "Tecnologia", "tecnologia")
+        df_f, produto_sel = filtrar_se_existe(df_f, df_view, "Produto", "Produto", "produto", depende_de=bool(tecnologia_sel))
+        df_f, categoria_sel = filtrar_se_existe(df_f, df_view, "Categoria", "Categoria", "categoria", depende_de=bool(produto_sel))
 
 
     # === STATUS ===
-    titulo_secao("Status")
-
-    df_f, status_its_sel = filtrar_se_existe(df_f, df_view, "Status Volume Isenção - ITS", "Status Volume de Isenção - ITS", "status_its")
-    df_f, status_rle_sel = filtrar_se_existe(df_f, df_view, "Status Área RLE", "Status Área RLE", "status_rle")
-    df_f, status_fat_sel = filtrar_se_existe(df_f, df_view, "Status de Faturamento", "Status de Faturamento", "status_fat")
+    with st.sidebar.expander("Status", expanded=False):
+        df_f, status_its_sel = filtrar_se_existe(df_f, df_view, "Status Volume Isenção - ITS", "Status Volume de Isenção - ITS", "status_its")
+        df_f, status_rle_sel = filtrar_se_existe(df_f, df_view, "Status Área RLE", "Status Área RLE", "status_rle", default=["Aprovado"])
+        df_f, status_fat_sel = filtrar_se_existe(df_f, df_view, "Status de Faturamento", "Status de Faturamento", "status_fat")
 
 
     # === Botão limpar ===
@@ -728,7 +718,7 @@ function toggleGroup(id) {
 
 
     # ============================================================
-    # ANÁLISE GRÁFICA — 3 perguntas de negócio (Schwabish style)
+    # ANÁLISE GRÁFICA — 4 perguntas de negócio (Schwabish style)
     # ============================================================
     st.markdown("<div style='margin:3rem 0 1rem;'></div>", unsafe_allow_html=True)
 
@@ -782,13 +772,25 @@ function toggleGroup(id) {
     total_vol_kpi = pd.to_numeric(df_f[col_vol], errors="coerce").sum() if col_vol else 0
     total_roy_kpi = pd.to_numeric(df_f[col_roy], errors="coerce").sum() if col_roy else 0
 
+    # Contagem única de multiplicadores (filiais) e cooperantes
+    col_filial_kpi = encontrar_coluna(df_f, "Razão Social Filial")
+    col_coop_kpi = encontrar_coluna(df_f, "Nome do Cooperante")
+
+    total_multiplicadores = 0
+    if col_filial_kpi:
+        total_multiplicadores = df_f[col_filial_kpi].astype(str).str.strip().replace("", pd.NA).dropna().nunique()
+
+    total_cooperantes = 0
+    if col_coop_kpi:
+        total_cooperantes = df_f[col_coop_kpi].astype(str).str.strip().replace("", pd.NA).dropna().nunique()
+
     kpi_html = f"""
 <style>
 .kpi-grid {{
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
-    margin: 1rem 0 2rem;
+    margin: 1rem 0 1rem;
 }}
 .kpi-card {{
     background: #FFFFFF;
@@ -827,6 +829,17 @@ function toggleGroup(id) {
         <p class="kpi-label">Registros</p>
         <p class="kpi-value">{fmt_ha(total_registros)}</p>
     </div>
+    <div class="kpi-card">
+        <p class="kpi-label">Multiplicadores</p>
+        <p class="kpi-value">{fmt_ha(total_multiplicadores)}</p>
+    </div>
+    <div class="kpi-card">
+        <p class="kpi-label">Cooperantes</p>
+        <p class="kpi-value">{fmt_ha(total_cooperantes)}</p>
+    </div>
+</div>
+
+<div class="kpi-grid">
     <div class="kpi-card">
         <p class="kpi-label">Área Total</p>
         <p class="kpi-value">{fmt_ha(total_area_kpi)}<span class="kpi-unit">ha</span></p>
@@ -890,7 +903,7 @@ function toggleGroup(id) {
             top3_nomes = ", ".join(top3[col_prod].tolist())
 
             secao_titulo(
-                label="ANÁLISE GRÁFICA — 1/2",
+                label="ANÁLISE GRÁFICA — 1/4",
                 titulo="Quais variedades são mais plantadas?",
                 descricao=(
                     f"<b>{top_var[col_prod]}</b> lidera com {fmt_func(top_var[campo_valor])} {unidade} "
@@ -959,7 +972,7 @@ function toggleGroup(id) {
                 bargap=0.35,
             )
 
-            st.plotly_chart(fig_v1, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig_v1, use_container_width=True, config={"displayModeBar": True, "displaylogo": False, "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"], "toImageButtonOptions": {"format": "png", "scale": 2}})
 
             st.markdown(
                 "<p style='font-size:12px;color:#6B7280;margin-top:-0.3rem;'>"
@@ -1020,7 +1033,7 @@ function toggleGroup(id) {
                 bargap=0.35,
             )
 
-            st.plotly_chart(fig_v2, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig_v2, use_container_width=True, config={"displayModeBar": True, "displaylogo": False, "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"], "toImageButtonOptions": {"format": "png", "scale": 2}})
 
 
             # ---------- VISÃO 3: Stacked bar (1 barra única segmentada) ----------
@@ -1128,7 +1141,7 @@ function toggleGroup(id) {
                 bargap=0.35,
             )
 
-            st.plotly_chart(fig_v3, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig_v3, use_container_width=True, config={"displayModeBar": True, "displaylogo": False, "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"], "toImageButtonOptions": {"format": "png", "scale": 2}})
 
 
             # ---------- VISÃO 4: Pareto (barras + curva acumulada) ----------
@@ -1233,7 +1246,7 @@ function toggleGroup(id) {
                 secondary_y=True,
             )
 
-            st.plotly_chart(fig_v4, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig_v4, use_container_width=True, config={"displayModeBar": True, "displaylogo": False, "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"], "toImageButtonOptions": {"format": "png", "scale": 2}})
 
             # Insight do Pareto
             if var_80 is not None and idx_80 is not None:
@@ -1279,7 +1292,7 @@ function toggleGroup(id) {
             top5_pct = (agg_mult.head(5)["_area"].sum() / total_area_mult * 100) if total_area_mult else 0
 
             secao_titulo(
-                label="ANÁLISE GRÁFICA — 2/2",
+                label="ANÁLISE GRÁFICA — 2/4",
                 titulo="Quais multiplicadores plantam mais área?",
                 descricao=(
                     f"<b>{top_filial_row[col_filial]}</b> lidera com {fmt_ha(top_filial_row['_area'])} ha "
@@ -1332,7 +1345,7 @@ function toggleGroup(id) {
                 bargap=0.35,
             )
 
-            st.plotly_chart(fig_mult, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig_mult, use_container_width=True, config={"displayModeBar": True, "displaylogo": False, "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"], "toImageButtonOptions": {"format": "png", "scale": 2}})
 
             st.markdown(
                 f"<p style='font-size:12px;color:#6B7280;margin-top:0.3rem;'>"
@@ -1348,6 +1361,213 @@ function toggleGroup(id) {
             )
         else:
             st.caption("Sem dados de multiplicador nos filtros atuais.")
+
+
+    # ============================================================
+    # PERGUNTA 3: Quais UFs concentram mais plantio?
+    # Barras horizontais (todas UFs - geralmente são poucas)
+    # ============================================================
+    st.markdown("<div style='margin:3rem 0 1rem;'></div>", unsafe_allow_html=True)
+
+    col_uf_plantio = encontrar_coluna(df_f, "UF de Plantio")
+
+    if all([col_uf_plantio, col_area]):
+        df_uf = df_f.copy()
+        df_uf["_area"] = pd.to_numeric(df_uf[col_area], errors="coerce").fillna(0)
+        df_uf[col_uf_plantio] = df_uf[col_uf_plantio].astype(str).str.strip().str.upper()
+
+        agg_uf = df_uf.groupby(col_uf_plantio, dropna=False)["_area"].sum().reset_index()
+        agg_uf = agg_uf[
+            (agg_uf[col_uf_plantio] != "")
+            & (~agg_uf[col_uf_plantio].isin(["NAN", "NONE"]))
+            & (agg_uf["_area"] > 0)
+        ].sort_values("_area", ascending=False).reset_index(drop=True)
+
+        if not agg_uf.empty:
+            total_area_uf = agg_uf["_area"].sum()
+            top_uf = agg_uf.iloc[0]
+            pct_top_uf = (top_uf["_area"] / total_area_uf * 100) if total_area_uf else 0
+            top3_uf_pct = (agg_uf.head(3)["_area"].sum() / total_area_uf * 100) if total_area_uf else 0
+
+            secao_titulo(
+                label="ANÁLISE GRÁFICA — 3/4",
+                titulo="Em quais estados está sendo plantado?",
+                descricao=(
+                    f"<b>{top_uf[col_uf_plantio]}</b> concentra {pct_top_uf:.0f}% da área "
+                    f"({fmt_ha(top_uf['_area'])} ha). "
+                    f"Top 3 estados representam <b>{top3_uf_pct:.0f}%</b> do plantio."
+                ),
+            )
+
+            # Inverte ordem (maior em cima)
+            df_uf_chart = agg_uf.sort_values("_area", ascending=True).reset_index(drop=True)
+
+            # Cores: top 3 em verde, resto cinza
+            cores_uf = []
+            for i in range(len(df_uf_chart)):
+                if i >= len(df_uf_chart) - 3:
+                    cores_uf.append("#1E8449")
+                else:
+                    cores_uf.append("#D1D5DB")
+
+            fig_uf = go.Figure()
+            fig_uf.add_trace(go.Bar(
+                x=df_uf_chart["_area"],
+                y=df_uf_chart[col_uf_plantio],
+                orientation="h",
+                marker=dict(color=cores_uf, line=dict(width=0)),
+                text=[fmt_ha(v) + " ha" for v in df_uf_chart["_area"]],
+                textposition="outside",
+                textfont=dict(size=13, color="#1A1A1A", family="Arial, sans-serif"),
+                hovertemplate="<b>%{y}</b><br>Área: %{x:,.0f} ha<extra></extra>",
+                cliponaxis=False,
+            ))
+
+            altura_uf = max(300, len(df_uf_chart) * 32 + 100)
+
+            fig_uf.update_layout(
+                height=altura_uf,
+                plot_bgcolor="#FFFFFF",
+                paper_bgcolor="#FFFFFF",
+                font=dict(family="Arial, sans-serif", size=13, color="#1A1A1A"),
+                margin=dict(l=20, r=140, t=20, b=20),
+                showlegend=False,
+                xaxis=dict(visible=False, showgrid=False),
+                yaxis=dict(
+                    showgrid=False,
+                    zeroline=False,
+                    tickfont=dict(color="#1A1A1A", size=13),
+                    automargin=True,
+                ),
+                bargap=0.35,
+            )
+
+            st.plotly_chart(fig_uf, use_container_width=True, config={"displayModeBar": True, "displaylogo": False, "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"], "toImageButtonOptions": {"format": "png", "scale": 2}})
+
+            st.markdown(
+                "<p style='font-size:12px;color:#6B7280;margin-top:0.3rem;'>"
+                "<span style='display:inline-block;width:12px;height:12px;background:#1E8449;"
+                "border-radius:2px;vertical-align:middle;margin-right:6px;'></span>"
+                "Top 3 estados &nbsp;&nbsp;&nbsp;"
+                "<span style='display:inline-block;width:12px;height:12px;background:#D1D5DB;"
+                "border-radius:2px;vertical-align:middle;margin-right:6px;'></span>"
+                "Demais estados"
+                "</p>",
+                unsafe_allow_html=True,
+            )
+        else:
+            st.caption("Sem dados de UF de plantio nos filtros atuais.")
+    else:
+        st.caption("Coluna 'UF de Plantio' não encontrada.")
+
+
+    # ============================================================
+    # PERGUNTA 4: Quais cidades têm mais plantio?
+    # Barras horizontais (Top 10)
+    # ============================================================
+    st.markdown("<div style='margin:3rem 0 1rem;'></div>", unsafe_allow_html=True)
+
+    col_cidade_plantio = encontrar_coluna(df_f, "Cidade de Plantio")
+
+    if all([col_cidade_plantio, col_area]):
+        df_cidade = df_f.copy()
+        df_cidade["_area"] = pd.to_numeric(df_cidade[col_area], errors="coerce").fillna(0)
+        df_cidade[col_cidade_plantio] = df_cidade[col_cidade_plantio].astype(str).str.strip()
+
+        # Inclui UF junto pra ficar claro (ex: "RIO VERDE - GO")
+        col_uf_p = encontrar_coluna(df_f, "UF de Plantio")
+        if col_uf_p:
+            df_cidade["_label"] = df_cidade[col_cidade_plantio] + " - " + df_cidade[col_uf_p].astype(str).str.strip().str.upper()
+        else:
+            df_cidade["_label"] = df_cidade[col_cidade_plantio]
+
+        agg_cid = df_cidade.groupby("_label", dropna=False)["_area"].sum().reset_index()
+        agg_cid = agg_cid[
+            (agg_cid["_label"].str.strip() != "")
+            & (~agg_cid["_label"].str.lower().str.startswith("nan"))
+            & (~agg_cid["_label"].str.startswith(" - "))
+            & (agg_cid["_area"] > 0)
+        ].sort_values("_area", ascending=False).reset_index(drop=True)
+
+        if not agg_cid.empty:
+            # Mostra TODAS as cidades
+            df_cid_chart = agg_cid.copy()
+
+            total_area_cid = agg_cid["_area"].sum()
+            top_cid = agg_cid.iloc[0]
+            pct_top_cid = (top_cid["_area"] / total_area_cid * 100) if total_area_cid else 0
+            top5_cid_pct = (agg_cid.head(5)["_area"].sum() / total_area_cid * 100) if total_area_cid else 0
+
+            secao_titulo(
+                label="ANÁLISE GRÁFICA — 4/4",
+                titulo="Quais cidades concentram mais plantio?",
+                descricao=(
+                    f"<b>{top_cid['_label']}</b> lidera com {fmt_ha(top_cid['_area'])} ha "
+                    f"({pct_top_cid:.0f}% do total). "
+                    f"Top 5 cidades concentram <b>{top5_cid_pct:.0f}%</b> da área plantada."
+                ),
+            )
+
+            # Inverte ordem
+            df_cid_chart = df_cid_chart.sort_values("_area", ascending=True).reset_index(drop=True)
+
+            # Cores: top 5 verde, resto cinza
+            cores_cid = []
+            for i in range(len(df_cid_chart)):
+                if i >= len(df_cid_chart) - 5:
+                    cores_cid.append("#1E8449")
+                else:
+                    cores_cid.append("#D1D5DB")
+
+            fig_cid = go.Figure()
+            fig_cid.add_trace(go.Bar(
+                x=df_cid_chart["_area"],
+                y=df_cid_chart["_label"],
+                orientation="h",
+                marker=dict(color=cores_cid, line=dict(width=0)),
+                text=[fmt_ha(v) + " ha" for v in df_cid_chart["_area"]],
+                textposition="outside",
+                textfont=dict(size=13, color="#1A1A1A", family="Arial, sans-serif"),
+                hovertemplate="<b>%{y}</b><br>Área: %{x:,.0f} ha<extra></extra>",
+                cliponaxis=False,
+            ))
+
+            altura_cid = max(400, len(df_cid_chart) * 32 + 100)
+
+            fig_cid.update_layout(
+                height=altura_cid,
+                plot_bgcolor="#FFFFFF",
+                paper_bgcolor="#FFFFFF",
+                font=dict(family="Arial, sans-serif", size=13, color="#1A1A1A"),
+                margin=dict(l=20, r=140, t=20, b=20),
+                showlegend=False,
+                xaxis=dict(visible=False, showgrid=False),
+                yaxis=dict(
+                    showgrid=False,
+                    zeroline=False,
+                    tickfont=dict(color="#1A1A1A", size=13),
+                    automargin=True,
+                ),
+                bargap=0.35,
+            )
+
+            st.plotly_chart(fig_cid, use_container_width=True, config={"displayModeBar": True, "displaylogo": False, "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"], "toImageButtonOptions": {"format": "png", "scale": 2}})
+
+            st.markdown(
+                f"<p style='font-size:12px;color:#6B7280;margin-top:0.3rem;'>"
+                f"<span style='display:inline-block;width:12px;height:12px;background:#1E8449;"
+                f"border-radius:2px;vertical-align:middle;margin-right:6px;'></span>"
+                f"Top 5 cidades &nbsp;&nbsp;&nbsp;"
+                f"<span style='display:inline-block;width:12px;height:12px;background:#D1D5DB;"
+                f"border-radius:2px;vertical-align:middle;margin-right:6px;'></span>"
+                f"Demais"
+                f"</p>",
+                unsafe_allow_html=True,
+            )
+        else:
+            st.caption("Sem dados de cidade nos filtros atuais.")
+    else:
+        st.caption("Coluna 'Cidade de Plantio' não encontrada.")
 
 except Exception as e:
     st.error(f"Erro ao carregar dados: {e}")

@@ -117,9 +117,11 @@ def filtro_multiselect(
     chave: str,
     depende_de: bool = False,
     threshold_busca: int = 5,
+    default: list = None,
 ) -> list:
     """
     Cria um filtro multiselect com checkboxes + busca opcional.
+    Funciona tanto direto na sidebar quanto dentro de um expander.
 
     Args:
         label: nome do filtro
@@ -127,13 +129,14 @@ def filtro_multiselect(
         chave: key única no session_state
         depende_de: True se o filtro depende de outro acima (mostra ↖)
         threshold_busca: a partir de quantos itens mostra a caixa de busca
+        default: lista de valores que vêm pré-marcados (apenas na 1ª renderização)
 
     Returns:
         Lista de valores selecionados (vazia = nenhum filtro)
     """
     # Label com indicador hierárquico
     indicador = '<span class="filtro-hierarquia">↖</span>' if depende_de else ''
-    st.sidebar.markdown(
+    st.markdown(
         f'<div class="filtro-label">{label} {indicador}</div>',
         unsafe_allow_html=True,
     )
@@ -142,13 +145,13 @@ def filtro_multiselect(
     opcoes_limpas = sorted([str(o) for o in opcoes if str(o).strip() not in ["", "nan", "None"]])
 
     if not opcoes_limpas:
-        st.sidebar.caption("Sem opções disponíveis")
+        st.caption("Sem opções disponíveis")
         return []
 
     # Caixa de busca quando tem muitos itens
     busca = ""
     if len(opcoes_limpas) > threshold_busca:
-        busca = st.sidebar.text_input(
+        busca = st.text_input(
             "Buscar",
             key=f"busca_{chave}",
             placeholder="Buscar nomes...",
@@ -161,16 +164,26 @@ def filtro_multiselect(
     else:
         opcoes_filtradas = opcoes_limpas
 
+    # === Aplica default na primeira renderização ===
+    # Marca uma chave de "ja_inicializou" para não sobrescrever depois
+    flag_init = f"init_{chave}"
+    if default and flag_init not in st.session_state:
+        for valor in opcoes_filtradas:
+            key_check = f"check_{chave}_{valor}"
+            if valor in default and key_check not in st.session_state:
+                st.session_state[key_check] = True
+        st.session_state[flag_init] = True
+
     # Container dos checkboxes
-    st.sidebar.markdown('<div class="filtro-checklist">', unsafe_allow_html=True)
+    st.markdown('<div class="filtro-checklist">', unsafe_allow_html=True)
 
     selecionados = []
     for valor in opcoes_filtradas:
         key_check = f"check_{chave}_{valor}"
-        if st.sidebar.checkbox(valor, key=key_check):
+        if st.checkbox(valor, key=key_check):
             selecionados.append(valor)
 
-    st.sidebar.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     return selecionados
 
