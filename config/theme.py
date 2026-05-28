@@ -217,13 +217,22 @@ button[kind="primary"]:hover {
 }
 
 /* ── Radio button (papel admin/usuario) ── */
+/* Aro externo do radio selecionado */
 .stRadio [role="radiogroup"] label[data-baseweb="radio"] div[aria-checked="true"] {
     background-color: var(--green-primary) !important;
     border-color: var(--green-primary) !important;
 }
-/* Bolinha interna do radio selecionado */
-.stRadio [role="radiogroup"] label > div:first-child > div {
-    background-color: var(--green-primary) !important;
+/* Bolinha interna APENAS do radio selecionado */
+.stRadio [role="radiogroup"] label[data-baseweb="radio"] div[aria-checked="true"] > div {
+    background-color: #FFFFFF !important;
+}
+/* Garante que NÃO selecionado fica em branco/cinza */
+.stRadio [role="radiogroup"] label[data-baseweb="radio"] div[aria-checked="false"] {
+    background-color: #FFFFFF !important;
+    border-color: #D1D5DB !important;
+}
+.stRadio [role="radiogroup"] label[data-baseweb="radio"] div[aria-checked="false"] > div {
+    background-color: transparent !important;
 }
 
 /* ── Checkbox marcado ── */
